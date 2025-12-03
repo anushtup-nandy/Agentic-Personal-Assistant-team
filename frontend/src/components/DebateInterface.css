@@ -1,0 +1,229 @@
+.debate-interface {
+    animation: fadeIn 0.4s ease-out;
+}
+
+.debate-layout {
+    display: grid;
+    grid-template-columns: 400px 1fr;
+    gap: var(--spacing-xl);
+}
+
+.debate-sidebar {
+    position: sticky;
+    top: calc(var(--spacing-xl) + 80px);
+    height: fit-content;
+    max-height: calc(100vh - 140px);
+    overflow-y: auto;
+}
+
+.agent-selection {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.agent-select-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+    background: var(--color-surface);
+    border: 2px solid transparent;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.agent-select-item:hover {
+    background: var(--color-surface-hover);
+    border-color: var(--color-border);
+}
+
+.agent-select-item.selected {
+    background: rgba(99, 102, 241, 0.1);
+    border-color: var(--color-primary);
+}
+
+.agent-select-avatar {
+    width: 2.5rem;
+    height: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--gradient-primary);
+    border-radius: var(--radius-md);
+    color: white;
+    flex-shrink: 0;
+}
+
+.agent-select-info {
+    flex: 1;
+}
+
+.agent-select-name {
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-primary);
+    font-size: 0.875rem;
+    margin-bottom: var(--spacing-xs);
+}
+
+.agent-select-role {
+    font-size: 0.8125rem;
+    color: var(--color-text-tertiary);
+}
+
+.agent-select-check {
+    width: 1.5rem;
+    height: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-primary);
+    border-radius: 50%;
+    color: white;
+    font-weight: bold;
+    font-size: 0.875rem;
+}
+
+.debate-main {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 180px);
+}
+
+.messages-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--spacing-md) 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+}
+
+.empty-messages {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: var(--spacing-md);
+}
+
+.empty-messages p {
+    color: var(--color-text-tertiary);
+    margin: 0;
+}
+
+.message {
+    display: flex;
+    gap: var(--spacing-md);
+    animation: slideInRight 0.3s ease-out;
+}
+
+.message-avatar {
+    width: 2.5rem;
+    height: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-md);
+    color: white;
+    flex-shrink: 0;
+}
+
+.message-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.message-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-sm);
+}
+
+.message-name {
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+    font-size: 0.875rem;
+}
+
+.message-role {
+    font-size: 0.8125rem;
+    color: var(--color-text-tertiary);
+}
+
+.message-turn {
+    margin-left: auto;
+    font-size: 0.75rem;
+    color: var(--color-text-tertiary);
+    padding: 0.125rem 0.5rem;
+    background: var(--color-surface);
+    border-radius: var(--radius-sm);
+}
+
+.message-text {
+    color: var(--color-text-secondary);
+    line-height: 1.7;
+    font-size: 0.9375rem;
+}
+
+.debate-summary {
+    margin-top: var(--spacing-lg);
+    padding: var(--spacing-lg);
+    background: var(--color-surface);
+    border-radius: var(--radius-lg);
+    border-left: 4px solid var(--color-primary);
+}
+
+.debate-summary h4 {
+    font-size: 1rem;
+    margin-bottom: var(--spacing-md);
+    color: var(--color-text-primary);
+}
+
+.debate-summary p {
+    color: var(--color-text-secondary);
+    line-height: 1.7;
+    margin-bottom: var(--spacing-lg);
+}
+
+.summary-stats {
+    display: flex;
+    gap: var(--spacing-xl);
+}
+
+.summary-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.summary-stat-value {
+    font-size: 1.5rem;
+    font-weight: var(--font-weight-bold);
+    color: var(--color-primary-light);
+}
+
+.summary-stat-label {
+    font-size: 0.8125rem;
+    color: var(--color-text-tertiary);
+    margin-top: var(--spacing-xs);
+}
+
+@media (max-width: 1200px) {
+    .debate-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .debate-sidebar {
+        position: relative;
+        top: 0;
+        max-height: none;
+    }
+
+    .debate-main {
+        height: 600px;
+    }
+}
