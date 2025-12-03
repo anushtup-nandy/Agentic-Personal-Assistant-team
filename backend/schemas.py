@@ -101,8 +101,10 @@ class DebateMessageResponse(BaseModel):
     """Schema for debate message."""
     id: int
     agent_id: int
+    agent_name: str  # Added to match frontend expectations
+    agent_role: str  # Added to match frontend expectations
     content: str
-    turn_number: int
+    turn: int  # Changed from turn_number to match frontend and SSE format
     created_at: datetime
     
     class Config:

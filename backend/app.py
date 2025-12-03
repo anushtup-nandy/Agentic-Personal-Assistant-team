@@ -364,7 +364,31 @@ async def get_debate_session(session_id: int, db: Session = Depends(get_db)):
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
     
-    return session
+    # Fetch messages with agent information
+    messages = db.query(DebateMessage, Agent).join(
+        Agent, DebateMessage.agent_id == Agent.id
+    ).filter(
+        DebateMessage.debate_session_id == session_id
+    ).order_by(DebateMessage.turn_number).all()
+    
+    # Build response with agent details
+    response_data = {
+        **session.__dict__,
+        "messages": [
+            {
+                "id": msg.id,
+                "agent_id": msg.agent_id,
+                "agent_name": agent.name,
+                "agent_role": agent.role,
+                "content": msg.content,
+                "turn": msg.turn_number,  # Map turn_number to turn for frontend
+                "created_at": msg.created_at
+            }
+            for msg, agent in messages
+        ]
+    }
+    
+    return response_data
 
 
 @app.get("/api/profiles/{profile_id}/debates", response_model=List[DebateSessionResponse])
