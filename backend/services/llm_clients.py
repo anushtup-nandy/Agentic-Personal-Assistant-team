@@ -87,7 +87,18 @@ class GeminiClient(BaseLLMClient):
                 )
             )
             
-            return response.text
+            # Handle response - try parts accessor first (for complex responses)
+            # The Gemini SDK throws ValueError when calling response.text on complex responses
+            try:
+                # Direct access to parts (most reliable for all response types)
+                return response.candidates[0].content.parts[0].text
+            except (AttributeError, IndexError, TypeError):
+                # Fallback: try simple text accessor
+                try:
+                    return response.text
+                except Exception as e:
+                    # If both fail, raise error
+                    raise RuntimeError(f"Unable to extract text from Gemini response: {str(e)}")
             
         except Exception as e:
             raise RuntimeError(f"Gemini API error: {str(e)}")
@@ -131,10 +142,16 @@ class GeminiClient(BaseLLMClient):
                     stream=True
                 )
             )
-            
+            # Stream response
+            # accumulated_text = "" # This variable is not needed for streaming yield
             for chunk in response:
-                if chunk.text:
-                    yield chunk.text
+                # Handle chunk with proper parts accessor
+                if chunk.candidates and chunk.candidates[0].content.parts:
+                    chunk_text = chunk.candidates[0].content.parts[0].text
+                    # accumulated_text += chunk_text # Not needed for streaming yield
+                    yield chunk_text
+            
+            # return accumulated_text # A generator should yield, not return a final value in this context
                     
         except Exception as e:
             raise RuntimeError(f"Gemini streaming error: {str(e)}")

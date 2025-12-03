@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from enum import Enum
 import asyncio
 from datetime import datetime
+import json # Added by user instruction
 
 from langgraph.graph import StateGraph, END
 from langchain.schema import HumanMessage, AIMessage, SystemMessage
@@ -12,6 +13,7 @@ from sqlalchemy.orm import Session
 from models import Agent, DebateSession, DebateMessage, UserProfile
 from services.llm_clients import LLMClientFactory
 from services.prompt_parser import PromptParser
+from llm_config import get_model_config # Added by user instruction
 
 
 class DebateFormat(Enum):
@@ -321,7 +323,8 @@ The discussion will proceed in turns. Share your insights, ask questions, and he
             full_conversation = "\n\n".join(conversation)
             
             # Use Gemini to generate summary
-            llm_client = LLMClientFactory.create_client("gemini", "gemini-2.5-flash")
+            config = get_model_config()
+            llm_client = LLMClientFactory.create_client(config["provider"], config["model"])
             
             summary_prompt = f"""Analyze the following decision-making discussion and provide:
 1. A concise summary of the main decision or conclusion (2-3 sentences)

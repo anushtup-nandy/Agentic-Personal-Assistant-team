@@ -1,7 +1,9 @@
-"""Profile learning engine for processing documents and building user context."""
-from typing import List, Dict, Any, Optional
+"""Profile learning engine for document processing and summarization."""
+from typing import List, Optional
 from pathlib import Path
+import chromadb
 import asyncio
+from llm_config import get_model_config
 from datetime import datetime
 
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -198,7 +200,8 @@ class ProfileEngine:
             combined_context = "\n\n".join(all_contexts[:8])  # Limit to avoid token limits
             
             # Use Gemini to generate summary
-            llm_client = LLMClientFactory.create_client("gemini", "gemini-2.5-flash")
+            config = get_model_config()
+            llm_client = LLMClientFactory.create_client(config["provider"], config["model"])
             
             summary_prompt = f"""Based on the following information about a user, create a comprehensive profile summary that includes:
 1. Professional background and expertise areas
@@ -261,7 +264,8 @@ Generate a well-structured profile summary:"""
             context = "\n".join([doc.page_content for doc in results])
             
             # Use LLM to extract structured expertise areas
-            llm_client = LLMClientFactory.create_client("gemini", "gemini-2.5-flash")
+            config = get_model_config()
+            llm_client = LLMClientFactory.create_client(config["provider"], config["model"])
             
             extraction_prompt = f"""Based on the following text, extract a list of 3-7 key expertise areas or domains. Return ONLY a comma-separated list of areas, nothing else.
 

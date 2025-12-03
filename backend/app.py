@@ -11,7 +11,7 @@ from datetime import datetime
 
 from config import settings
 from database import get_db, init_db, engine
-from models import UserProfile, Agent, DebateSession, Document, Base
+from models import UserProfile, Agent, DebateSession, DebateMessage, Document, Base
 from schemas import (
     UserProfileCreate, UserProfileResponse,
     AgentCreate, AgentUpdate, AgentResponse,
@@ -374,6 +374,23 @@ async def list_debate_sessions(profile_id: int, db: Session = Depends(get_db)):
         DebateSession.user_profile_id == profile_id
     ).order_by(DebateSession.created_at.desc()).all()
     return sessions
+
+
+@app.delete("/api/debates/{session_id}", status_code=204)
+async def delete_debate_session(session_id: int, db: Session = Depends(get_db)):
+    """Delete a debate session and all its messages."""
+    session = db.query(DebateSession).filter(DebateSession.id == session_id).first()
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    # Delete all messages first (due to foreign key constraint)
+    db.query(DebateMessage).filter(DebateMessage.debate_session_id == session_id).delete()
+    
+    # Delete the session
+    db.delete(session)
+    db.commit()
+    
+    return None
 
 
 @app.get("/api/debates/{session_id}/start")
