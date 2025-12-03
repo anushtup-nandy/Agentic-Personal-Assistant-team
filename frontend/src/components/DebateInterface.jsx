@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { MessageSquare, Play, Download, Bot } from 'lucide-react';
+import { MessageSquare, Play, Download, Bot, Sparkles } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 import { agentApi, debateApi } from '../api';
 import './DebateInterface.css';
 
@@ -251,7 +252,9 @@ export default function DebateInterface({ profile }) {
                                                 <span className="message-role">{msg.agent_role}</span>
                                                 <span className="message-turn">Turn {msg.turn + 1}</span>
                                             </div>
-                                            <div className="message-text">{msg.content}</div>
+                                            <div className="message-text">
+                                                <ReactMarkdown>{msg.content}</ReactMarkdown>
+                                            </div>
                                         </div>
                                     </div>
                                 ))}
@@ -273,9 +276,14 @@ export default function DebateInterface({ profile }) {
                     </div>
 
                     {summary && (
-                        <div className="debate-summary">
-                            <h4>Summary & Insights</h4>
-                            <p>{summary.summary}</p>
+                        <div className="debate-summary master-summary">
+                            <div className="master-header">
+                                <Sparkles size={24} style={{ color: 'var(--color-primary-light)' }} />
+                                <h4>Master Synthesis</h4>
+                            </div>
+                            <div className="summary-content">
+                                <ReactMarkdown>{summary.summary}</ReactMarkdown>
+                            </div>
                             <div className="summary-stats">
                                 <div className="summary-stat">
                                     <span className="summary-stat-value">{summary.message_count}</span>

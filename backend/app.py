@@ -163,6 +163,24 @@ async def list_documents(profile_id: int, db: Session = Depends(get_db)):
     return documents
 
 
+@app.delete("/api/documents/{document_id}", status_code=204)
+async def delete_document(document_id: int, db: Session = Depends(get_db)):
+    """Delete a document."""
+    document = db.query(Document).filter(Document.id == document_id).first()
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found")
+    
+    # Delete physical file
+    file_path = Path(document.file_path)
+    if file_path.exists():
+        file_path.unlink()
+    
+    db.delete(document)
+    db.commit()
+    
+    return None
+
+
 @app.post("/api/profiles/{profile_id}/generate-summary", response_model=MessageResponse)
 async def generate_profile_summary(profile_id: int, db: Session = Depends(get_db)):
     """Generate profile summary from uploaded documents."""

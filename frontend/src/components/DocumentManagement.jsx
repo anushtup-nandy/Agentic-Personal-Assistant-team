@@ -61,6 +61,20 @@ export default function DocumentManagement({ profile, onProfileUpdated }) {
         }
     };
 
+    const handleDeleteDocument = async (documentId) => {
+        if (!confirm('Are you sure you want to delete this document?')) {
+            return;
+        }
+
+        try {
+            await documentApi.delete(documentId);
+            await loadDocuments();
+        } catch (error) {
+            console.error('Error deleting document:', error);
+            alert('Failed to delete document');
+        }
+    };
+
     if (loading) {
         return (
             <div className="flex justify-center items-center" style={{ minHeight: '400px' }}>
@@ -176,6 +190,13 @@ export default function DocumentManagement({ profile, onProfileUpdated }) {
                                             <span className="badge">Pending</span>
                                         )}
                                     </div>
+                                    <button
+                                        className="btn btn-ghost btn-sm"
+                                        onClick={() => handleDeleteDocument(doc.id)}
+                                        title="Delete document"
+                                    >
+                                        <Trash2 size={16} />
+                                    </button>
                                 </div>
                             ))}
                         </div>

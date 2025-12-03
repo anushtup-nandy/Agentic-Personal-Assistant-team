@@ -27,6 +27,7 @@ export const documentApi = {
         });
     },
     list: (profileId) => api.get(`/profiles/${profileId}/documents`),
+    delete: (documentId) => api.delete(`/documents/${documentId}`),
     generateSummary: (profileId) => api.post(`/profiles/${profileId}/generate-summary`),
 };
 
