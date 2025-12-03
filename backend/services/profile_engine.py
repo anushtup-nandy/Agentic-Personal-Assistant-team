@@ -183,44 +183,91 @@ class ProfileEngine:
             )
             
             # Get diverse samples from the vector store
-            # We'll query for different aspects
+            # Expanded queries to capture comprehensive information
             queries = [
-                "professional experience and expertise",
-                "skills and strengths",
-                "goals and aspirations",
-                "decision making style and preferences"
+                "technical skills, programming languages, technologies, tools, frameworks",
+                "work experience, internships, job roles, professional projects",
+                "education, degrees, certifications, academic achievements, research",
+                "career goals, aspirations, future plans, objectives",
+                "decision making process, problem solving approach, analytical thinking",
+                "risk tolerance, risk assessment, risk-taking behavior, comfort with uncertainty",
+                "personal values, priorities, what matters most, guiding principles",
+                "accomplishments, achievements, notable successes, contributions",
+                "preferences, working style, collaboration patterns, team dynamics"
             ]
             
             all_contexts = []
             for query in queries:
-                results = vector_store.similarity_search(query, k=2)
+                # Increased from k=2 to k=5 for more comprehensive context
+                results = vector_store.similarity_search(query, k=5)
                 all_contexts.extend([doc.page_content for doc in results])
             
-            # Combine context
-            combined_context = "\n\n".join(all_contexts[:8])  # Limit to avoid token limits
+            # Increased from 8 to 30 chunks for much more detailed summaries
+            combined_context = "\n\n".join(all_contexts[:30])
             
             # Use Gemini to generate summary
             config = get_model_config()
             llm_client = LLMClientFactory.create_client(config["provider"], config["model"])
             
-            summary_prompt = f"""Based on the following information about a user, create a comprehensive profile summary that includes:
-1. Professional background and expertise areas
-2. Key skills and strengths
-3. Decision-making style and preferences
-4. Risk tolerance (low/moderate/high)
-5. Notable goals or aspirations
+            summary_prompt = f"""Based on the comprehensive information below about a user, create a DETAILED and THOROUGH profile summary.
 
-Keep the summary concise (under 300 words) but informative.
+This summary should be extensive and include specific details from the documents. Use markdown formatting for clarity.
+
+## Structure your response with these sections:
+
+### 1. Professional Background and Expertise
+- Detailed technical skills and proficiencies with specific technologies mentioned
+- Key areas of expertise with concrete examples
+- Relevant certifications, training, or specialized knowledge
+
+### 2. Work Experience and Projects
+- Notable projects, internships, or work experience with specific details
+- Accomplishments and contributions (be specific about what was achieved)
+- Technologies, methodologies, and approaches used
+
+### 3. Education
+- Educational background with institutions and achievements
+- Research work, thesis topics, or significant academic projects
+- Academic honors or distinctions
+
+### 4. Key Skills and Strengths
+- Technical skills (programming, tools, frameworks, etc.)
+- Soft skills demonstrated in the documents
+- Particular areas where they excel
+
+### 5. Decision-Making Style and Preferences
+- How they approach problem-solving and decision-making
+- Preferences in work environment, team dynamics, partnerships
+- Values and principles that guide their decisions
+- Geographic or cultural preferences mentioned
+
+### 6. Risk Tolerance
+- Assessment of risk appetite: **Low**, **Moderate**, or **High**
+- Specific examples of risk-related decisions or attitudes
+- Factors they consider when evaluating risks
+
+### 7. Goals and Aspirations
+- Short-term career goals and immediate objectives
+- Long-term career aspirations and vision
+- Personal goals and life planning
+- Preferred locations, industries, or types of opportunities
+
+**Important**: 
+- Be specific and reference actual details from the documents
+- Use **bold** for emphasis on key points
+- Use bullet points (-) for lists
+- Include concrete examples wherever possible
+- Make this comprehensive - don't hold back on detail
 
 User Information:
 {combined_context}
 
-Generate a well-structured profile summary:"""
+Generate a comprehensive, well-structured, and detailed profile summary:"""
             
             summary = await llm_client.generate(
                 prompt=summary_prompt,
                 temperature=0.3,  # Lower temperature for more factual
-                max_tokens=400
+                max_tokens=10000  # Increased from 400 to allow for comprehensive summaries
             )
             
             # Update user profile
@@ -277,7 +324,7 @@ Expertise areas (comma-separated):"""
             response = await llm_client.generate(
                 prompt=extraction_prompt,
                 temperature=0.2,
-                max_tokens=100
+                max_tokens=1000  # Increased from 100 to prevent MAX_TOKENS errors
             )
             
             # Parse response

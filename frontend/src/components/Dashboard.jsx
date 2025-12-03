@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Users, Plus, Brain, Sparkles } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 import { agentApi, documentApi } from '../api';
 import './Dashboard.css';
 
@@ -83,9 +84,9 @@ export default function Dashboard({ profile }) {
                     <div className="card-header">
                         <h3 className="card-title">Your Profile Summary</h3>
                     </div>
-                    <p style={{ color: 'var(--color-text-secondary)', lineHeight: 1.7 }}>
-                        {profile.profile_summary}
-                    </p>
+                    <div className="markdown-content" style={{ color: 'var(--color-text-secondary)', lineHeight: 1.7 }}>
+                        <ReactMarkdown>{profile.profile_summary}</ReactMarkdown>
+                    </div>
 
                     {profile.expertise_areas && profile.expertise_areas.length > 0 && (
                         <div style={{ marginTop: 'var(--spacing-lg)' }}>

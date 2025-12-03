@@ -273,7 +273,7 @@ export default function DebateInterface({ profile }) {
                             min="1"
                             max="20"
                             value={maxTurns}
-                            onChange={(e) => setMaxTurns(parseInt(e.target.value))}
+                            onChange={(e) => setMaxTurns(parseInt(e.target.value) || 5)}
                             disabled={isDebating}
                         />
                     </div>

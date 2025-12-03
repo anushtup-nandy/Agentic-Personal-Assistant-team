@@ -77,28 +77,93 @@ class GeminiClient(BaseLLMClient):
                 max_output_tokens=max_tokens,
             )
             
+            # Configure safety settings to be less restrictive for legitimate use cases
+            safety_settings = [
+                {
+                    "category": "HARM_CATEGORY_HARASSMENT",
+                    "threshold": "BLOCK_ONLY_HIGH"
+                },
+                {
+                    "category": "HARM_CATEGORY_HATE_SPEECH",
+                    "threshold": "BLOCK_ONLY_HIGH"
+                },
+                {
+                    "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                    "threshold": "BLOCK_ONLY_HIGH"
+                },
+                {
+                    "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+                    "threshold": "BLOCK_ONLY_HIGH"
+                }
+            ]
+            
             # Run in executor to avoid blocking
             loop = asyncio.get_event_loop()
             response = await loop.run_in_executor(
                 None,
                 lambda: self.model.generate_content(
                     full_prompt,
-                    generation_config=generation_config
+                    generation_config=generation_config,
+                    safety_settings=safety_settings
                 )
             )
             
-            # Handle response - try parts accessor first (for complex responses)
-            # The Gemini SDK throws ValueError when calling response.text on complex responses
-            try:
-                # Direct access to parts (most reliable for all response types)
-                return response.candidates[0].content.parts[0].text
-            except (AttributeError, IndexError, TypeError):
-                # Fallback: try simple text accessor
-                try:
-                    return response.text
-                except Exception as e:
-                    # If both fail, raise error
-                    raise RuntimeError(f"Unable to extract text from Gemini response: {str(e)}")
+            # Handle response - properly extract text from parts
+            # Gemini can return multi-part responses, so we need to handle them correctly
+            if not response.candidates:
+                raise RuntimeError("No candidates in Gemini response")
+            
+            candidate = response.candidates[0]
+            
+            # Check if response was blocked due to safety filters
+            if hasattr(candidate, 'finish_reason'):
+                finish_reason = str(candidate.finish_reason)
+                # Map common finish reasons
+                finish_reason_map = {
+                    '1': 'STOP (normal completion)',
+                    '2': 'MAX_TOKENS (response cut off)',
+                    '3': 'SAFETY (blocked by safety filters)',
+                    '4': 'RECITATION (would recite training data)',
+                    '5': 'OTHER'
+                }
+                finish_reason_desc = finish_reason_map.get(finish_reason, finish_reason)
+                
+                if 'SAFETY' in finish_reason or finish_reason == '3':
+                    safety_info = ""
+                    if hasattr(candidate, 'safety_ratings'):
+                        safety_info = f" Safety ratings: {candidate.safety_ratings}"
+                    raise RuntimeError(f"Response blocked by Gemini safety filters.{safety_info}")
+                elif finish_reason == '2':  # MAX_TOKENS
+                    # This is not necessarily an error - the response might just be long
+                    # Let's try to extract what we have
+                    print(f"WARNING: Gemini response hit max_tokens limit. Response may be incomplete.")
+                elif 'PROHIBITED' in finish_reason or 'RECITATION' in finish_reason or finish_reason in ['4', '5']:
+                    raise RuntimeError(f"Response blocked by Gemini ({finish_reason_desc})")
+            
+            if not hasattr(candidate, 'content') or not hasattr(candidate.content, 'parts'):
+                raise RuntimeError("Invalid response structure from Gemini")
+            
+            parts = candidate.content.parts
+            if not parts:
+                # Check finish reason for more context
+                finish_reason = str(getattr(candidate, 'finish_reason', 'unknown'))
+                # Debug: print the full response to understand what's happening
+                print(f"DEBUG: Gemini response candidate: {candidate}")
+                print(f"DEBUG: Finish reason: {finish_reason}")
+                if hasattr(candidate, 'safety_ratings'):
+                    print(f"DEBUG: Safety ratings: {candidate.safety_ratings}")
+                raise RuntimeError(f"No content parts in Gemini response (finish_reason: {finish_reason})")
+            
+            # Extract text from all parts and join them
+            text_parts = []
+            for part in parts:
+                if hasattr(part, 'text') and part.text:
+                    text_parts.append(part.text)
+            
+            if not text_parts:
+                raise RuntimeError("No text content found in Gemini response parts")
+            
+            return ''.join(text_parts)
             
         except Exception as e:
             raise RuntimeError(f"Gemini API error: {str(e)}")

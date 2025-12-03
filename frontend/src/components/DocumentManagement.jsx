@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Upload, FileText, RefreshCw, Sparkles, Trash2 } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 import { documentApi, profileApi } from '../api';
 import './DocumentManagement.css';
 
@@ -217,9 +218,9 @@ export default function DocumentManagement({ profile, onProfileUpdated }) {
                             </span>
                         </div>
                     </div>
-                    <p style={{ color: 'var(--color-text-secondary)', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
-                        {profile.profile_summary}
-                    </p>
+                    <div className="markdown-content" style={{ color: 'var(--color-text-secondary)', lineHeight: 1.7 }}>
+                        <ReactMarkdown>{profile.profile_summary}</ReactMarkdown>
+                    </div>
 
                     {profile.expertise_areas && profile.expertise_areas.length > 0 && (
                         <div style={{ marginTop: 'var(--spacing-lg)' }}>
