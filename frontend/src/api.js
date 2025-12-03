@@ -44,9 +44,10 @@ export const agentApi = {
 // Debate API
 export const debateApi = {
     create: (profileId, data) => api.post(`/profiles/${profileId}/debates`, data),
+    get: (sessionId) => api.get(`/debates/${sessionId}`),
     list: (profileId) => api.get(`/profiles/${profileId}/debates`),
-    get: (id) => api.get(`/debates/${id}`),
-    start: (id) => `/api/debates/${id}/start`, // Returns URL for SSE
+    delete: (sessionId) => api.delete(`/debates/${sessionId}`),
+    start: (sessionId) => `/api/debates/${sessionId}/start`, // Returns URL for SSE
 };
 
 // Utility API

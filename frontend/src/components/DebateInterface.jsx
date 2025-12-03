@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { MessageSquare, Play, Download, Bot, Sparkles } from 'lucide-react';
+import { MessageSquare, Play, Download, Bot, Sparkles, History, Trash2, X } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { agentApi, debateApi } from '../api';
 import './DebateInterface.css';
@@ -13,10 +13,14 @@ export default function DebateInterface({ profile }) {
     const [isDebating, setIsDebating] = useState(false);
     const [messages, setMessages] = useState([]);
     const [summary, setSummary] = useState(null);
+    const [debateHistory, setDebateHistory] = useState([]);
+    const [selectedDebate, setSelectedDebate] = useState(null);
+    const [showHistory, setShowHistory] = useState(false);
     const messagesEndRef = useRef(null);
 
     useEffect(() => {
         loadAgents();
+        loadDebateHistory();
     }, [profile.id]);
 
     useEffect(() => {
@@ -29,6 +33,51 @@ export default function DebateInterface({ profile }) {
             setAgents(response.data);
         } catch (error) {
             console.error('Error loading agents:', error);
+        }
+    };
+
+    const loadDebateHistory = async () => {
+        try {
+            const response = await debateApi.list(profile.id);
+            setDebateHistory(response.data);
+        } catch (error) {
+            console.error('Error loading debate history:', error);
+        }
+    };
+
+    const handleDeleteDebate = async (sessionId) => {
+        if (!confirm('Are you sure you want to delete this debate?')) {
+            return;
+        }
+
+        try {
+            await debateApi.delete(sessionId);
+            await loadDebateHistory();
+            if (selectedDebate?.id === sessionId) {
+                setSelectedDebate(null);
+                setMessages([]);
+                setSummary(null);
+            }
+        } catch (error) {
+            console.error('Error deleting debate:', error);
+            alert('Failed to delete debate');
+        }
+    };
+
+    const handleViewDebate = async (debate) => {
+        try {
+            const response = await debateApi.get(debate.id);
+            setSelectedDebate(response.data);
+            setMessages(response.data.messages || []);
+            setSummary(response.data.decision_summary ? {
+                summary: response.data.decision_summary,
+                message_count: response.data.messages?.length || 0,
+                agents_participated: new Set(response.data.messages?.map(m => m.agent_id) || []).size
+            } : null);
+            setShowHistory(false);
+        } catch (error) {
+            console.error('Error loading debate:', error);
+            alert('Failed to load debate');
         }
     };
 
@@ -73,24 +122,29 @@ export default function DebateInterface({ profile }) {
             // Start SSE stream
             const eventSource = new EventSource(debateApi.start(sessionId));
 
-            eventSource.onmessage = (event) => {
+            eventSource.addEventListener('message', (event) => {
                 const data = JSON.parse(event.data);
 
-                if (data.type === 'complete') {
-                    eventSource.close();
-                    setIsDebating(false);
+                if (data.type === 'message') {
+                    setMessages(prev => [...prev, {
+                        agent_name: data.agent_name,
+                        agent_role: data.agent_role,
+                        content: data.content,
+                        turn: data.turn
+                    }]);
                 } else if (data.type === 'summary') {
                     setSummary(data.data);
-                } else if (data.type === 'error') {
-                    console.error('Debate error:', data.message);
-                    alert('An error occurred during the debate');
+                } else if (data.type === 'complete') {
                     eventSource.close();
                     setIsDebating(false);
-                } else {
-                    // Regular message
-                    setMessages(prev => [...prev, data]);
+                    loadDebateHistory(); // Refresh history after debate completes
+                } else if (data.type === 'error') {
+                    console.error('Debate error:', data.message);
+                    alert(`Error: ${data.message}`);
+                    eventSource.close();
+                    setIsDebating(false);
                 }
-            };
+            });
 
             eventSource.onerror = (error) => {
                 console.error('SSE error:', error);
@@ -124,9 +178,64 @@ export default function DebateInterface({ profile }) {
             <div className="page-header">
                 <div>
                     <h1>Multi-Agent Debate</h1>
-                    <p>Get diverse perspectives from your AI agents on any decision</p>
+                    <p>Engage multiple AI agents in collaborative decision-making</p>
                 </div>
+                <button
+                    className="btn btn-secondary"
+                    onClick={() => setShowHistory(!showHistory)}
+                >
+                    <History size={20} />
+                    {showHistory ? 'Hide' : 'Show'} History
+                </button>
             </div>
+
+            {/* History Sidebar */}
+            {showHistory && (
+                <div className="history-sidebar">
+                    <div className="history-header">
+                        <h3>Debate History</h3>
+                        <button className="btn btn-ghost btn-sm" onClick={() => setShowHistory(false)}>
+                            <X size={18} />
+                        </button>
+                    </div>
+
+                    {debateHistory.length === 0 ? (
+                        <div className="empty-history">
+                            <MessageSquare size={48} style={{ color: 'var(--color-text-tertiary)' }} />
+                            <p>No debates yet</p>
+                        </div>
+                    ) : (
+                        <div className="history-list">
+                            {debateHistory.map(debate => (
+                                <div
+                                    key={debate.id}
+                                    className={`history-item ${selectedDebate?.id === debate.id ? 'active' : ''}`}
+                                >
+                                    <div className="history-item-content" onClick={() => handleViewDebate(debate)}>
+                                        <div className="history-item-title">{debate.title}</div>
+                                        <div className="history-item-meta">
+                                            <span>{new Date(debate.created_at).toLocaleDateString()}</span>
+                                            <span className={`badge badge-${debate.status === 'completed' ? 'success' : 'warning'}`}>
+                                                {debate.status}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <button
+                                        className="btn btn-ghost btn-sm"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleDeleteDebate(debate.id);
+                                        }}
+                                        title="Delete debate"
+                                    >
+                                        <Trash2 size={16} />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
 
             <div className="debate-layout">
                 <div className="debate-sidebar card">
